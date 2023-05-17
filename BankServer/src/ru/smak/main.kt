@@ -1,4 +1,7 @@
-package ru.smak.net
+package ru.smak
 
-class main {
+import ru.smak.net.Server
+
+fun main() {
+    Server().start()
 }
