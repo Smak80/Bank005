@@ -1,11 +1,13 @@
 package ru.smak.ui
 
+import ru.smak.data.Transfer
 import ru.smak.data.User
 import ru.smak.net.Client
 import javax.swing.GroupLayout
 import javax.swing.JButton
 import javax.swing.JFrame
 import javax.swing.JLabel
+import javax.swing.JOptionPane
 import javax.swing.JTextField
 
 class RegWindow(private val client: Client) : JFrame() {
@@ -31,6 +33,10 @@ class RegWindow(private val client: Client) : JFrame() {
     init{
         defaultCloseOperation = EXIT_ON_CLOSE
         setSize(600, 450)
+        client.apply {
+            addMessageReceivedListener(::showMessage)
+            start()
+        }
         lblPhone      = JLabel("Номер телефона:")
         lblLastName = JLabel("Фамилия:")
         lblFirstName = JLabel("Имя:")
@@ -177,7 +183,7 @@ class RegWindow(private val client: Client) : JFrame() {
         }
 
         btnReg.addActionListener {
-            client.regUser(User(
+            client.sendData(User(
                 phone = tfPhone.text,
                 lastName = tfLastName.text,
                 firstName = tfFirstName.text,
@@ -188,6 +194,17 @@ class RegWindow(private val client: Client) : JFrame() {
                 )
             )
         }
+        btnCancel.addActionListener {
+            client.sendData(Transfer(
+                accFrom = "00001",
+                accTo = "00002",
+                sum = 100000F,
+                fee = 1F,
+            ))
+        }
+    }
+    fun showMessage(msg:String) {
+        JOptionPane.showMessageDialog(this, msg)
     }
 
     companion object{

@@ -1,15 +1,12 @@
 package ru.smak.net
 
-import ru.smak.data.DataType
-import ru.smak.data.DbHelper
-import ru.smak.data.User
-import java.io.ByteArrayInputStream
-import java.io.ObjectInputStream
+import ru.smak.data.*
+import java.io.*
 import java.net.Socket
 import kotlin.concurrent.thread
 
 class ConnectedClient(val client: Socket) {
-    private val chio = BankIO(client)
+    private val bio = BankIO(client)
     private val dbh = DbHelper()
     companion object{
         private val clients = mutableListOf<ConnectedClient>()
@@ -19,7 +16,13 @@ class ConnectedClient(val client: Socket) {
     }
 
     private fun send(data: String) {
-
+        val answer = Answer(data)
+        ByteArrayOutputStream().also {
+            ObjectOutputStream(it).run{
+                writeObject(answer)
+            }
+            bio.sendData(it.toByteArray())
+        }
     }
 
     private fun parse(data: ByteArray){
@@ -29,13 +32,23 @@ class ConnectedClient(val client: Socket) {
                     val u = readObject() as User
                     dbh.addUser(u)
                 }
+                DataType.TRANSFER.ordinal -> {
+                    try {
+                        val t = readObject() as Transfer
+                        dbh.doTransfer(t)
+                        send("Ok")
+                    }
+                    catch (ex: Exception) {
+                        send(ex.message?:"Ошибка")
+                    }
+                }
             }
         }
     }
     fun start(){
         thread {
             try {
-                chio.startReceiving {
+                bio.startReceiving {
                     try {
                         parse(it)
                     } catch (e: Exception) {
